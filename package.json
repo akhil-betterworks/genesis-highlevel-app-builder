@@ -1,0 +1,20 @@
+{
+  "name": "highlevel-app-builder",
+  "version": "1.0.0",
+  "description": "AI-powered HighLevel marketplace app builder",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd frontend && npm install && cd ../functions && npm install && cd ..",
+    "dev": "firebase emulators:start",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:functions": "cd functions && npm run dev",
+    "build": "cd frontend && npm run build && cd ..",
+    "deploy": "firebase deploy",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "type-check": "cd frontend && npm run type-check && cd ../functions && npm run build",
+    "clean": "rm -rf frontend/dist frontend/node_modules functions/lib functions/node_modules"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "projects",
+      "queryScope": "Collection",
+      "fields": [
+        {"fieldPath": "createdAt", "order": "DESCENDING"},
+        {"fieldPath": "__name__", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "snapshots",
+      "queryScope": "Collection",
+      "fields": [
+        {"fieldPath": "timestamp", "order": "DESCENDING"},
+        {"fieldPath": "__name__", "order": "ASCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
