@@ -45,6 +45,14 @@ export function createApp() {
   router.use(hlRoutes())
   router.use((_req, _res, next) => next(new AppError('not_found', 'Route not found')))
 
+  app.get('/', (_req, res) => {
+    res.json({
+      service: 'Genesis API',
+      status: 'ok',
+      app: process.env.FRONTEND_URL || 'https://genesis-appbuilder.web.app',
+      health: '/api/health',
+    })
+  })
   app.use('/api', router)
   app.use('/', router)
   app.use(errorHandler)
