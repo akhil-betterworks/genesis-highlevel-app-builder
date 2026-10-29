@@ -4,7 +4,7 @@ Describe an app in plain English. Genesis streams a working Vue 3 app from Claud
 
 - **Live app (Firebase Hosting):** <https://genesis-appbuilder.web.app> (sign up with any email, then *Connect HighLevel*)
 - **API base URL:** <https://genesis-api-six.vercel.app/api> (health: `/api/health`). This is the same Express app as the `api` Cloud Function, hosted on Vercel because Cloud Functions need the Blaze plan (see Deployment notes).
-- **Loom walkthrough:** `<loom link>`
+- **Loom walkthrough:** <https://www.loom.com/share/d7cc46fb2f8647b8aaa22e84079b1094>
 
 ## Reviewer quick start (about 5 minutes)
 
