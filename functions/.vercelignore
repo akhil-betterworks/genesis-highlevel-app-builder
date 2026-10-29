@@ -1,0 +1,8 @@
+/node_modules
+/lib
+/test
+/coverage
+*.log
+.env*
+.secret.local
+vitest*.mts

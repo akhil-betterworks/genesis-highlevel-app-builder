@@ -1,36 +1,37 @@
-rules_version = '3';
+rules_version = '2';
+
+// Security model
+// - The browser may only READ its own user profile and project data (live updates via onSnapshot).
+// - ALL writes go through Cloud Functions (Admin SDK bypasses rules), where validation, quotas,
+//   snapshots and HighLevel scoping are enforced in one place.
+// - Server-only collections (OAuth tokens, OAuth state, rate-limit counters) are never readable.
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isOwner(uid);
+      allow write: if false;
 
       match /projects/{projectId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read: if isOwner(uid) && resource.data.deletedAt == null;
+        allow write: if false;
 
-        match /files/{fileId} {
-          allow read, write: if request.auth != null && request.auth.uid == uid;
+        // `{sub}/{rest=**}` (not `{sub=**}`): in rules v2 `**` also matches zero segments, which
+        // would re-grant read on the project doc itself and bypass the soft-delete check above.
+        match /{sub}/{rest=**} {
+          allow read: if isOwner(uid);
+          allow write: if false;
         }
-
-        match /snapshots/{snapshotId} {
-          allow read, write: if request.auth != null && request.auth.uid == uid;
-        }
-      }
-
-      match /highlevelTokens/{locationId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
       }
     }
 
-    // Public chat history (audit trail)
-    match /chat/{chatId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
+    // Encrypted HighLevel tokens — server only.
+    match /hlConnections/{uid} { allow read, write: if false; }
+    match /oauthStates/{id} { allow read, write: if false; }
+    match /rateLimits/{id} { allow read, write: if false; }
 
-    // Deny all by default
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }

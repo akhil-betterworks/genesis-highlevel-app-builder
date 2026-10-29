@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install --omit=dev --ignore-scripts",
+  "buildCommand": "mkdir -p public && echo ok > public/robots.txt",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.ts": { "maxDuration": 300, "memory": 1024 }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+}

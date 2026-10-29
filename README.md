@@ -1,323 +1,142 @@
-# HighLevel AI App Builder
+# Genesis — AI-Powered HighLevel App Builder
 
-An AI-powered application builder for generating HighLevel marketplace-compatible apps. Users sign in, connect their HighLevel account via OAuth, and describe apps in natural language. The system generates production-ready Vue 3 + TypeScript code that integrates with real HighLevel APIs.
+Describe an app in plain English. Genesis streams a working Vue 3 app from Claude, shows it live in a sandboxed preview wired to **real HighLevel data** (contacts, conversations, calendars), and lets you edit, version, diff and restore it.
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- Firebase CLI: `npm install -g firebase-tools`
-- HighLevel developer account at [developers.gohighlevel.com](https://developers.gohighlevel.com)
-
-### Environment Setup
-
-1. Copy `.env.example` to `.env` and fill in your credentials:
-
-```bash
-cp .env.example .env
-```
-
-2. Fill in your Firebase config and credentials:
-
-```
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
-VITE_FIREBASE_MESSAGING_SENDER_ID=...
-VITE_FIREBASE_APP_ID=...
-```
-
-3. Add your LLM API key (Claude):
-
-```
-ANTHROPIC_API_KEY=your_key_here
-```
-
-4. HighLevel OAuth credentials (already provided):
-
-```
-HIGHLEVEL_CLIENT_ID=6ad9edaddf6c2500a18f558c-mvjfqiej
-HIGHLEVEL_CLIENT_SECRET=8ba35eb8-c900-49e1-b256-2f66e27850fe
-```
-
-### Local Development with Emulators
-
-```bash
-# Install dependencies
-cd frontend && npm install && cd ..
-cd functions && npm install && cd ..
-
-# Start Firebase emulators (Auth, Firestore, Functions)
-firebase emulators:start
-
-# In another terminal, start frontend dev server
-cd frontend
-npm run dev
-```
-
-Visit `http://localhost:3000` and sign up to get started.
-
-## 📋 HighLevel Setup
-
-### 1. Create Developer Account
-
-- Go to [developers.gohighlevel.com](https://developers.gohighlevel.com)
-- Sign up for a developer account
-
-### 2. Create Marketplace App
-
-- Navigate to your developer dashboard
-- Create a new marketplace app
-- Note the **Client ID** and **Client Secret** (provided above)
-
-### 3. Configure OAuth Redirect URI
-
-In your app settings on HighLevel:
-- Set OAuth redirect URI to your deployed URL:
-  - Development: `http://localhost:5001/highlevel-app-builder/us-central1/oauthCallback`
-  - Production: `https://your-deployed-domain.com/api/oauth/callback`
-
-### 4. Create Sandbox Account
-
-- From the developer dashboard, create a sandbox account
-- Use this for testing without affecting production data
-
-## 🏗️ Architecture
-
-### Stack
-
-- **Frontend**: Vue 3 + TypeScript + ShadCN UI + Vite
-- **Backend**: Firebase (Auth, Firestore, Cloud Functions)
-- **LLM**: Claude 3.5 Sonnet via Anthropic SDK
-- **APIs**: HighLevel Contacts, Conversations, Calendars
-
-### Key Decisions
-
-1. **Firebase for Backend**: Firebase Authentication handles OAuth seamlessly, Firestore provides real-time data, Cloud Functions reduce infrastructure overhead
-2. **Claude for Code Generation**: Superior code quality and context understanding for generating production-ready Vue 3/TypeScript code
-3. **Server-Sent Events (SSE) for Streaming**: Real-time token streaming provides better UX during generation without WebSocket complexity
-4. **Firestore Security Rules**: Strict scoping ensures users can only access their own projects and data
-5. **Snapshot Versioning**: Each generation creates a snapshot enabling full version control and rollback capability
-6. **Token Management in Cloud Functions**: Secure storage of HighLevel OAuth tokens with automatic refresh via scheduled functions
-7. **Project-scoped Files**: Files stored as subcollections under projects for clean data organization and access control
-8. **Hybrid Auth**: Firebase email/password for app login + HighLevel OAuth for API access provides flexibility
-9. **ShadCN Vue for UI**: Pre-built accessible components reduce development time while maintaining design consistency
-10. **Type-safe API Layer**: Centralized axios instance with Firebase token injection prevents auth boilerplate
-
-## 📁 Project Structure
-
-```
-better/
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Home.vue              # Landing page
-│   │   │   ├── Login.vue             # Firebase auth
-│   │   │   ├── Signup.vue            # Registration
-│   │   │   ├── Dashboard.vue         # Projects list
-│   │   │   ├── ProjectEditor.vue     # Main workspace (chat/code/preview)
-│   │   │   └── OAuthCallback.vue     # HL OAuth handler
-│   │   ├── services/
-│   │   │   ├── firebase.ts           # Firebase config
-│   │   │   ├── auth.ts               # Auth functions
-│   │   │   └── api.ts                # API client with SSE
-│   │   ├── App.vue                   # Root component
-│   │   └── main.ts                   # Entry point
-│   ├── index.html
-│   ├── vite.config.ts
-│   └── package.json
-├── functions/
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── auth.ts               # Auth functions
-│   │   │   ├── projects.ts           # Project CRUD + file management
-│   │   │   ├── generation.ts         # LLM streaming + file generation
-│   │   │   └── highlevel.ts          # OAuth + HL API integration
-│   │   ├── utils/
-│   │   │   ├── auth.ts               # Token verification
-│   │   │   └── highlevel.ts          # HL API helpers
-│   │   └── index.ts                  # Function exports
-│   └── package.json
-├── firebase.json                     # Firebase config
-├── firestore.rules                   # Security rules
-├── firestore.indexes.json            # Firestore indexes
-├── .env.example                      # Environment template
-└── README.md                         # This file
-```
-
-## 🔐 Security
-
-### Authentication Flow
-
-1. **App Login**: Email/password via Firebase Authentication
-2. **HighLevel OAuth**: User clicks "Connect HighLevel Account"
-3. **Token Storage**: OAuth tokens stored in Firestore, scoped to user
-4. **Token Refresh**: Scheduled Cloud Function refreshes expiring tokens
-5. **API Calls**: Generated apps receive access token from Cloud Functions with HL context
-
-### Firestore Security Rules
-
-- Users can only read/write their own documents
-- Projects and files are scoped to user ID
-- No public collections (except with explicit allow)
-- Token storage is user-scoped subcollection
-
-### Best Practices
-
-- Never commit `.env` files with real credentials
-- Use Firebase Secret Manager for sensitive values in production
-- All Cloud Functions verify authentication before processing
-- CORS limited to deployed frontend domain
-- API requests require valid Firebase ID token
-
-## 🚀 Deployment
-
-### Deploy to Firebase Hosting + Cloud Functions
-
-```bash
-# Build frontend
-cd frontend
-npm run build
-cd ..
-
-# Deploy all (hosting + functions)
-firebase deploy
-
-# Or deploy individually
-firebase deploy --only hosting
-firebase deploy --only functions
-```
-
-### Deploy Steps
-
-1. **Create Firebase Project**
-   - Go to [Firebase Console](https://console.firebase.google.com)
-   - Create new project "highlevel-app-builder"
-   - Enable Authentication (Email/Password provider)
-   - Create Firestore database
-
-2. **Initialize Firebase CLI**
-   ```bash
-   firebase login
-   firebase init  # Select hosting + functions
-   ```
-
-3. **Set Environment Variables**
-   ```bash
-   firebase functions:config:set anthropic.key="your_key"
-   firebase functions:config:set highlevel.client_id="..."
-   firebase functions:config:set highlevel.client_secret="..."
-   ```
-
-4. **Deploy**
-   ```bash
-   npm run build
-   firebase deploy
-   ```
-
-5. **Update HighLevel OAuth URI**
-   - Get your deployed Cloud Function URL from Firebase Console
-   - Update OAuth redirect URI in HighLevel app settings
-
-### Monitoring
-
-- **Firebase Console**: Real-time function logs and Firestore usage
-- **Cloud Functions logs**: View via `firebase functions:log`
-- **Performance**: Use Firestore composite indexes for complex queries
-
-## 📊 File Generation Process
-
-1. User sends prompt in chat
-2. Frontend connects to `/projects/{id}/generate` SSE endpoint
-3. Cloud Function:
-   - Fetches user's HighLevel tokens
-   - Retrieves sample data (contacts, conversations, calendars)
-   - Sends prompt + context to Claude
-4. Claude streams response with file structure
-5. Files are validated and saved to Firestore
-6. Previous generation snapshot is created automatically
-7. Frontend updates code editor in real-time with tokens
-
-## 🎯 Next Steps for Development
-
-1. **Add Monaco Editor Integration**: Install and configure for syntax highlighting
-2. **Implement Live Preview**: Use Sandpack or WebContainers to run generated apps
-3. **Add Diff View**: Show what changed between generations
-4. **Generation Cancellation**: Implement abort for mid-stream cancellations
-5. **Rate Limiting**: Add per-user generation quotas via Cloud Functions
-6. **Webhook Integration**: Subscribe to HighLevel webhooks for real-time data
-7. **Test Suite**: Add unit tests for Cloud Functions and components
-8. **Analytics**: Track generation success/failure and user behavior
-
-## 🎬 Demo Video
-
-[Link to Loom video walkthrough](https://loom.com)
-
-The video covers:
-- Signing up and creating account
-- Connecting HighLevel via OAuth
-- Creating new project
-- Sending AI generation prompt
-- Watching code stream in real-time
-- Live preview with real HL data
-- Editing generated files
-- Restoring from snapshot history
-
-## 🐛 Troubleshooting
-
-### "Invalid authorization code"
-- Check HighLevel OAuth redirect URI matches deployment URL
-- Verify Client ID and Secret are correct
-- Ensure sandbox account has API access enabled
-
-### "Token expired"
-- Refresh tokens are automatically refreshed by scheduled Cloud Function
-- If manual refresh needed: re-authenticate via OAuth button
-
-### "Project not found"
-- Verify project exists in Firestore (should be under `users/{uid}/projects`)
-- Check Firestore security rules allow access
-
-### Firebase Emulator Issues
-- Clear emulator data: `rm -rf firebase-emulator-data/`
-- Restart emulator: `firebase emulators:start --force`
-
-## 📝 API Reference
-
-### Generated App Context
-
-Generated apps receive this context via props:
-
-```typescript
-{
-  accessToken: string        // HighLevel OAuth token
-  locationId: string         // Connected location ID
-  contactsApiUrl: string     // Full Contacts API endpoint
-  conversationsApiUrl: string
-  calendarsApiUrl: string
-}
-```
-
-### Example: Fetch Contacts in Generated App
-
-```typescript
-const contacts = await fetch(
-  `https://services.highlevel.com/v3/crm/contacts`,
-  {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Location-Id': locationId,
-    },
-  }
-).then(r => r.json())
-```
-
-## 📄 License
-
-Built as a HighLevel marketplace application. See LICENSE for details.
+- **Live URL:** `https://<your-project>.web.app` _(fill in after `npm run deploy`)_
+- **Loom walkthrough:** `<loom link>`
 
 ---
 
-**Questions?** Open an issue on the repository or check the [HighLevel Marketplace Docs](https://marketplace.gohighlevel.com/docs).
+## Quick start (local, everything from the terminal)
+
+Prereqs: Node 22, Java 11+ (`brew install openjdk`), Firebase CLI (`npm i -g firebase-tools`).
+
+```bash
+cp .env.example .env          # fill in Firebase web config, HL client id/secret, Anthropic key
+npm run install:all
+npm run setup                 # generates functions/.env, functions/.secret.local, frontend/.env.local
+npm run dev                   # Auth + Firestore + Functions emulators, TS watcher, Vite on :3000
+```
+
+Open <http://localhost:3000>. Emulator UI: <http://127.0.0.1:4001>. No `firebase login` is needed for local dev.
+
+In the HighLevel Marketplace app settings, add the redirect URI `http://localhost:3000/oauth/callback` (and the production one below).
+
+| Command | What it does |
+| --- | --- |
+| `npm test` | Backend (51) + frontend (6) unit tests |
+| `npm run test:rules` | Firestore security-rules tests (needs the emulator running) |
+| `npm run typecheck` / `npm run build` | Strict TS for both packages / production build |
+
+### Choosing an AI provider (free options included)
+
+Set `LLM_PROVIDER` in `.env`, then run `npm run setup`:
+
+| Provider | Cost | Key | Notes |
+| --- | --- | --- | --- |
+| `ollama` | Free, local | none | `ollama create genesis-qwen -f scripts/ollama.Modelfile`, then `LLM_MODEL=genesis-qwen`. Local dev only. |
+| `gemini` | Free tier | `LLM_API_KEY` from aistudio.google.com/apikey | Default model `gemini-2.5-flash`; works in production |
+| `groq` / `openrouter` | Free tiers | `LLM_API_KEY` | OpenAI-compatible |
+| `anthropic` | Paid | `ANTHROPIC_API_KEY` | Best output quality |
+
+## Features
+
+| Area | Implementation |
+| --- | --- |
+| Auth | Firebase Auth (email/password); every API call verifies the ID token |
+| Generation | Claude via `messages.stream`, relayed as **SSE** with live per-file streaming into Monaco |
+| Iterative refinement | Each prompt sends current files + bounded chat history; the model emits only changed files |
+| Cancel | Client abort + server cancel flag; partial output is persisted and snapshotted |
+| HighLevel | OAuth 2.0 (location), encrypted tokens, proactive refresh, allow-listed API proxy |
+| Preview | Sandboxed iframe; the generated app calls `HL.contacts.list()` etc. through a postMessage bridge |
+| Projects | CRUD with soft delete, cursor pagination |
+| Files | Tree, tabs, Monaco editing, ⌘S save, rename/delete |
+| Versioning | Snapshot per generation + manual checkpoints; non-destructive restore; side-by-side diff per generation |
+| Limits | Firestore-backed rate limits (generate 20/h, proxy 240/min, API 300/min), file/project size caps |
+
+## Architecture
+
+```
+Browser (Vue 3 + shadcn-vue)
+  ├─ Firebase Auth ── ID token ──┐
+  ├─ fetch + SSE ────────────────┼─► Cloud Function `api` (Express, v2)
+  └─ iframe sandbox ─postMessage─┘      ├─ Anthropic (stream)
+       (generated app, no network)      ├─ HighLevel API (services.leadconnectorhq.com)
+                                        └─ Firestore (Admin SDK)
+HighLevel ── redirect ─► `oauthCallback` function ─► Firestore (encrypted tokens)
+```
+
+Firestore layout: `users/{uid}/projects/{pid}/{files,snapshots,messages,generations}`; server-only `hlConnections`, `oauthStates`, `rateLimits`.
+
+### SSE protocol (`POST /api/projects/:id/generate`)
+
+`meta` (generationId) → `status` (stage) → `token` (plan/summary text) → `file_start` / `file_delta` / `file_end` / `file_delete` → `done` (status, snapshotId, changes) | `error` (code, recoverable, partial). A comment heartbeat every 15s keeps proxies from closing the stream. If the connection drops, the client reconciles from the persisted generation doc.
+
+### Key decisions
+
+1. **Tag protocol instead of JSON for LLM output** (`<file path="…">…</file>`). It parses incrementally, so files stream into the editor token by token, and a truncated response still yields usable complete files.
+2. **All writes go through Functions; clients only read.** Validation, quotas, snapshots and HL scoping live in one place, and the rules stay trivially auditable.
+3. **Generated code never sees tokens or the network.** The iframe has an opaque origin (`sandbox="allow-scripts"`, no `allow-same-origin`), CSP `connect-src 'none'`, and a postMessage bridge to an **allow-listed** proxy that injects `locationId` and the `Version` header server-side.
+4. **OAuth state is a random nonce, stored only as SHA-256, single-use (transactional), with a 10-minute TTL.** This prevents CSRF and replay.
+5. **Tokens are encrypted with AES-256-GCM at rest.** The key is a Secret Manager secret. Refresh runs 5 minutes before expiry, with in-process dedupe and a Firestore lease so concurrent instances don't burn the rotating refresh token.
+6. **Snapshot on every generation, plus a backup before every restore.** Restore can never lose work.
+7. **A per-project generation lock and a cancel flag in Firestore.** These work across function instances, unlike in-memory state.
+8. **A runtime of classic scripts (Vue global + Tailwind CDN) instead of a bundler.** There's no build step in the preview, so it renders instantly, and the LLM targets a small, well-documented surface.
+9. **Context budgeting.** Files are truncated in priority order to a character budget, and history is bounded, so costs and latency stay predictable as projects grow.
+10. **Express inside one v2 function** (540s timeout, concurrency 40). This suits long SSE streams, and the cold-start surface stays small.
+
+### What I'd improve with more time
+
+1. Move generation to a queue (Cloud Tasks) and stream from Firestore, so it survives client and instance loss.
+2. Add a Babel/esbuild-wasm step in the preview to allow ES modules and SFCs.
+3. Handle HL webhooks (contact created/updated) by pushing to the preview instead of polling `onChange`.
+4. Support multiple HL locations per user and agency-level installs.
+5. Add Playwright E2E tests against the emulators, and an eval suite for prompt regressions.
+
+## Deployment
+
+### Option A: free, no billing card (Firebase Spark + Vercel Hobby)
+
+Firebase Spark serves Hosting, Auth and Firestore. The same Express API runs on Vercel through [functions/api/index.ts](functions/api/index.ts), authenticating to Firestore with a service account.
+
+```bash
+firebase login
+npx vercel login          # free Hobby account, no card
+npm run deploy:free       # uploads env to Vercel (values hidden), deploys API, builds SPA, deploys Hosting + rules
+```
+
+HighLevel still redirects to `https://<site>.web.app/oauth/callback`. That SPA route forwards the query to the API, which validates the state and exchanges the code.
+
+### Option B: everything on Firebase (Blaze plan)
+
+Add the Hosting rewrites `/api/**` → function `api` and `/oauth/callback` → function `oauthCallback` back to `firebase.json` (Spark can't deploy rewrites to functions), then:
+
+The project needs the Blaze plan, which Functions and Secret Manager require.
+
+```bash
+firebase login
+firebase use <project-id>
+firebase functions:secrets:set ANTHROPIC_API_KEY
+firebase functions:secrets:set HL_CLIENT_SECRET
+firebase functions:secrets:set TOKEN_ENCRYPTION_KEY   # use the value from .env
+```
+
+Set the production values in `functions/.env.<project-id>`:
+
+```
+HL_CLIENT_ID=…
+HL_REDIRECT_URI=https://<project-id>.web.app/oauth/callback
+FRONTEND_URL=https://<project-id>.web.app
+ALLOWED_ORIGINS=https://<project-id>.web.app,https://<project-id>.firebaseapp.com
+```
+
+Build `frontend/.env.production` with the `VITE_FIREBASE_*` values (and **without** `VITE_USE_EMULATORS`), then run `npm run deploy`.
+
+Add `https://<project-id>.web.app/oauth/callback` to the HL app's redirect URIs. Required scopes: `contacts.readonly contacts.write conversations.readonly conversations.write conversations/message.readonly conversations/message.write calendars.readonly calendars/events.readonly locations.readonly`.
+
+## Security notes
+
+- **Rotate the HighLevel client secret.** An earlier commit of `.env.example` contained real credentials. The current file is scrubbed, but git history still contains the old values.
+- CORS uses an allow-list (`ALLOWED_ORIGINS`), and security headers are set on Hosting and on API responses.
+- Errors returned to clients are normalized; provider payloads are only logged.
+- Inputs are validated with zod. File paths are restricted to a safe extension set with no traversal, and size caps apply.
