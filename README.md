@@ -2,8 +2,23 @@
 
 Describe an app in plain English. Genesis streams a working Vue 3 app from Claude, shows it live in a sandboxed preview wired to **real HighLevel data** (contacts, conversations, calendars), and lets you edit, version, diff and restore it.
 
-- **Live URL:** `https://<your-project>.web.app` _(fill in after `npm run deploy`)_
+- **Live app:** <https://genesis-appbuilder.web.app> (sign up with any email, then *Connect HighLevel*)
+- **API (Vercel):** <https://genesis-api-six.vercel.app/api/health>
 - **Loom walkthrough:** `<loom link>`
+
+## Reviewer quick start (about 5 minutes)
+
+Prereqs: **Node 22** and **Java 11+** (for the Firebase emulators: `brew install openjdk` on macOS).
+
+```bash
+npm i -g firebase-tools
+cp .env.example .env     # paste HL_CLIENT_SECRET + LLM_API_KEY (sent separately); the rest is pre-filled
+npm run install:all
+npm run setup
+npm run dev              # open http://localhost:3000
+```
+
+Locally, Auth + Firestore run in the Firebase emulators, so no Firebase account or login is needed. Without the two keys the app still runs, but HighLevel connect and AI generation are disabled; use the live link for those.
 
 ---
 
@@ -35,7 +50,7 @@ Set `LLM_PROVIDER` in `.env`, then run `npm run setup`:
 | Provider | Cost | Key | Notes |
 | --- | --- | --- | --- |
 | `ollama` | Free, local | none | `ollama create genesis-qwen -f scripts/ollama.Modelfile`, then `LLM_MODEL=genesis-qwen`. Local dev only. |
-| `gemini` | Free tier | `LLM_API_KEY` from aistudio.google.com/apikey | Default model `gemini-2.5-flash`; works in production |
+| `gemini` | Free tier | `LLM_API_KEY` from aistudio.google.com/apikey | Default model `gemini-3.6-flash`; works in production |
 | `groq` / `openrouter` | Free tiers | `LLM_API_KEY` | OpenAI-compatible |
 | `anthropic` | Paid | `ANTHROPIC_API_KEY` | Best output quality |
 
