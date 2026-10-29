@@ -55,7 +55,7 @@ curl -sf -m 10 "$API_URL/api/health" >/dev/null || { echo "API health check fail
 echo "  ✓ $API_URL/api/health"
 
 echo "▸ Building frontend (API → $API_URL/api)"
-(cd frontend && VITE_API_BASE="$API_URL/api" npm run build >/dev/null)
+(cd frontend && VITE_USE_EMULATORS=false VITE_API_BASE="$API_URL/api" npm run build >/dev/null)
 
 echo "▸ Deploying Hosting + Firestore rules/indexes"
 firebase deploy --only hosting,firestore --project "$PROJECT_ID" --non-interactive 2>&1 | grep -E "✔|Error|Hosting URL" || true
